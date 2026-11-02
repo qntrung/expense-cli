@@ -23,3 +23,13 @@ def test_add_and_list_expenses():
     assert [e.amount for e in expenses] == [50000, 30000]
     assert expenses[0].note == "Phở"
     assert isinstance(expenses[0].amount, int)
+
+
+def test_delete_expense():
+    conn = db.connect(":memory:")
+    saved = db.add_expense(conn, Expense(amount=10000, category="x", spent_on=date(2026, 1, 1)))
+    assert saved.id is not None
+
+    assert db.delete_expense(conn, saved.id) is True
+    assert db.list_expenses(conn) == []
+    assert db.delete_expense(conn, saved.id) is False

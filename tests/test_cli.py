@@ -26,3 +26,28 @@ def test_add_then_list(tmp_path):
 def test_add_rejects_non_positive_amount(tmp_path):
     result = runner.invoke(app, ["add", "0", "x"], env={"EXPENSE_DB": str(tmp_path / "t.db")})
     assert result.exit_code != 0
+
+
+def test_add_rejects_negative_amount_and_writes_nothing(tmp_path):
+    env = {"EXPENSE_DB": str(tmp_path / "t.db")}
+    result = runner.invoke(app, ["add", "-5000", "an-uong"], env=env)
+    assert result.exit_code != 0
+
+    result = runner.invoke(app, ["list"], env=env)
+    assert "Chưa có khoản chi nào." in result.output
+
+
+def test_delete(tmp_path):
+    env = {"EXPENSE_DB": str(tmp_path / "t.db")}
+    runner.invoke(app, ["add", "45000", "an-uong"], env=env)
+
+    result = runner.invoke(app, ["delete", "1"], input="n\n", env=env)
+    assert result.exit_code != 0
+    assert "#1" in runner.invoke(app, ["list"], env=env).output
+
+    result = runner.invoke(app, ["delete", "1", "--yes"], env=env)
+    assert result.exit_code == 0, result.output
+    assert "Chưa có khoản chi nào." in runner.invoke(app, ["list"], env=env).output
+
+    result = runner.invoke(app, ["delete", "1", "-y"], env=env)
+    assert result.exit_code == 1

@@ -58,3 +58,21 @@ def list_cmd(db_path: DbOption = DEFAULT_DB) -> None:
         line = f"#{e.id}  {e.spent_on.isoformat()}  {format_vnd(e.amount):>14}  {e.category}"
         typer.echo(f"{line}  {e.note}".rstrip())
     typer.echo(f"Tổng: {format_vnd(sum(e.amount for e in expenses))}")
+
+
+@app.command()
+def delete(
+    expense_id: Annotated[
+        int, typer.Argument(metavar="ID", help="ID khoản chi (xem bằng `list`).")
+    ],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Bỏ qua bước xác nhận.")] = False,
+    db_path: DbOption = DEFAULT_DB,
+) -> None:
+    """Xóa một khoản chi."""
+    if not yes:
+        typer.confirm(f"Xóa khoản chi #{expense_id}?", abort=True)
+    conn = db.connect(db_path)
+    if not db.delete_expense(conn, expense_id):
+        typer.echo(f"Không tìm thấy khoản chi #{expense_id}.", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"Đã xóa #{expense_id}.")

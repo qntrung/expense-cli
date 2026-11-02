@@ -63,3 +63,10 @@ def list_expenses(conn: sqlite3.Connection) -> list[Expense]:
         )
         for row in rows
     ]
+
+
+def delete_expense(conn: sqlite3.Connection, expense_id: int) -> bool:
+    """Xóa khoản chi theo `id`. Trả về False nếu không tồn tại."""
+    with conn:
+        cur = conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+    return cur.rowcount > 0
