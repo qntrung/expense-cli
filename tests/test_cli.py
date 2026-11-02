@@ -51,3 +51,21 @@ def test_delete(tmp_path):
 
     result = runner.invoke(app, ["delete", "1", "-y"], env=env)
     assert result.exit_code == 1
+
+
+def test_add_rejects_negative_amount(tmp_path):
+    db_file = tmp_path / "t.db"
+    result = runner.invoke(app, ["add", "-5000", "an-uong"], env={"EXPENSE_DB": str(db_file)})
+
+    assert result.exit_code == 2
+    assert "Số tiền phải là số nguyên ≥ 1" in result.output
+    assert "No such option" not in result.output
+    assert not db_file.exists()
+
+
+def test_add_accepts_option_value_that_looks_negative(tmp_path):
+    env = {"EXPENSE_DB": str(tmp_path / "t.db")}
+    result = runner.invoke(app, ["add", "100", "an-uong", "--note", "-5"], env=env)
+
+    assert result.exit_code == 0, result.output
+    assert "-5" in runner.invoke(app, ["list"], env=env).output

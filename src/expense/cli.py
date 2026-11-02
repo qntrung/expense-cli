@@ -1,10 +1,12 @@
 """Định nghĩa lệnh CLI (Typer). Không viết SQL ở đây — dùng `expense.db`."""
 
+import re
 from datetime import date, datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
+from typer.core import TyperCommand
 
 from expense import db
 from expense.models import Expense
@@ -16,14 +18,54 @@ app = typer.Typer(help="Quản lý chi tiêu cá nhân.", no_args_is_help=True)
 DbOption = Annotated[Path, typer.Option("--db", envvar="EXPENSE_DB", help="Đường dẫn file SQLite.")]
 
 
+AMOUNT_ERROR = "Số tiền phải là số nguyên ≥ 1"
+_NEGATIVE_NUMBER = re.compile(r"-\d+")
+
+
 def format_vnd(amount: int) -> str:
     """Định dạng số đồng, ví dụ 50000 -> '50.000 ₫'."""
     return f"{amount:,}".replace(",", ".") + " ₫"
 
 
-@app.command()
+def _validate_amount(value: int) -> int:
+    if value < 1:
+        raise typer.BadParameter(f"{AMOUNT_ERROR} (nhận được {value}).")
+    return value
+
+
+class _AddCommand(TyperCommand):
+    """Báo lỗi số tiền âm rõ ràng thay vì để parser hiểu `-5000` là option `-5`."""
+
+    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:  # noqa: ANN401
+        # Tên các option nhận giá trị (--note, -n, --date, ...): token ngay sau chúng là
+        # giá trị option, ví dụ `--note -5`, không phải số tiền.
+        value_options = {
+            name
+            for param in self.params
+            if param.param_type_name == "option" and not getattr(param, "is_flag", False)
+            for name in param.opts
+        }
+        skip_next = False
+        for arg in args:
+            if skip_next:
+                skip_next = False
+                continue
+            if arg == "--":
+                break
+            if arg in value_options:
+                skip_next = True
+            elif _NEGATIVE_NUMBER.fullmatch(arg):
+                raise typer.BadParameter(
+                    f"{AMOUNT_ERROR} (nhận được {arg}).", ctx=ctx, param_hint="'AMOUNT'"
+                )
+        return super().parse_args(ctx, args)
+
+
+@app.command(cls=_AddCommand)
 def add(
-    amount: Annotated[int, typer.Argument(min=1, help="Số tiền (đồng, số nguyên).")],
+    amount: Annotated[
+        int, typer.Argument(callback=_validate_amount, help="Số tiền (đồng, số nguyên ≥ 1).")
+    ],
     category: Annotated[str, typer.Argument(help="Danh mục, ví dụ an-uong.")],
     note: Annotated[str, typer.Option("--note", "-n", help="Ghi chú.")] = "",
     spent_on: Annotated[
