@@ -19,6 +19,8 @@ CLI quản lý chi tiêu cá nhân. Python 3.12, Typer, SQLite.
 - `src/expense/models.py` – dataclass nghiệp vụ
 - `migrations/`           – file SQL đánh số 0001_, 0002_, ...
 
+`db.connect()` tự áp dụng migration còn thiếu (theo dõi trong bảng `schema_migrations`). Thư mục `migrations/` được tìm theo đường dẫn tương đối từ `src/expense/db.py`, nên app chạy đúng khi cài editable (`uv sync`). File DB mặc định là `~/.expense/expense.db`, có thể đổi bằng `--db` hoặc biến môi trường `EXPENSE_DB`. Test dùng `:memory:` hoặc `tmp_path`.
+
 ## Quy ước
 - Type hint đầy đủ; hàm public có docstring
 - Tiền lưu dạng số nguyên (đồng). KHÔNG dùng float cho tiền

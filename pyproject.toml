@@ -1,0 +1,34 @@
+[project]
+name = "expense-cli"
+version = "0.1.0"
+description = "CLI quản lý chi tiêu cá nhân"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["typer>=0.12"]
+
+[project.scripts]
+expense = "expense.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/expense"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ANN", "D"]
+ignore = ["D100", "D104", "D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "D"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

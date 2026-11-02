@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Môi trường / công cụ
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Dữ liệu và bí mật — KHÔNG commit
+*.db
+*.db-journal
+*.sqlite3
+.env
+.env.*
