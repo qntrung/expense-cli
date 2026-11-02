@@ -35,6 +35,6 @@ expense add 45000 an-uong --note "Phở"
 
 - Mỗi file trong `migrations/` có tên dạng `NNNN_ten.sql`. Các file được chạy theo thứ tự tên.
 - `db.connect()` gọi `migrate()` ở mỗi lần mở kết nối. Bảng `schema_migrations(version)` lưu tên các file đã chạy, ví dụ `0001_init`.
-- File mới được chạy bằng `executescript()`, xong mới ghi version. Lệnh này tự COMMIT nên file không chạy trong một transaction: lỗi giữa chừng có thể để schema dở dang.
+- Nội dung file và dòng ghi version được bọc trong `BEGIN; … COMMIT;` rồi chạy bằng `executescript()`. Nếu lỗi, toàn bộ bị rollback và lần sau file được chạy lại.
 - Không sửa migration đã commit. Muốn đổi schema thì thêm file mới, ví dụ `0002_...sql`.
 - `migrations/` được tìm theo đường dẫn tương đối từ `db.py`, nên chỉ chạy đúng khi cài editable (`uv sync`).

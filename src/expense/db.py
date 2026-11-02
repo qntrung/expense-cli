@@ -27,9 +27,21 @@ def migrate(conn: sqlite3.Connection, migrations_dir: Path = MIGRATIONS_DIR) -> 
         version = file.stem
         if version in applied:
             continue
-        with conn:
-            conn.executescript(file.read_text(encoding="utf-8"))
-            conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
+        # executescript() tự COMMIT trước khi chạy, nên tự mở transaction trong script
+        # để nội dung file và dòng ghi version cùng thành công hoặc cùng bị hủy.
+        quoted_version = version.replace("'", "''")
+        script = (
+            "BEGIN;\n"
+            f"{file.read_text(encoding='utf-8')}\n;\n"
+            f"INSERT INTO schema_migrations (version) VALUES ('{quoted_version}');\n"
+            "COMMIT;"
+        )
+        try:
+            conn.executescript(script)
+        except sqlite3.Error:
+            if conn.in_transaction:
+                conn.rollback()
+            raise
 
 
 def add_expense(conn: sqlite3.Connection, expense: Expense) -> Expense:
